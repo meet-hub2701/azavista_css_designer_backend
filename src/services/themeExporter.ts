@@ -70,7 +70,9 @@ export function exportThemeAsJSON(theme: ThemeDocument, sections: SectionDocumen
     theme: {
       name: theme.name,
       description: theme.description,
-      userId: theme.userId,
+      sourceUrl: theme.sourceUrl,
+      extractedHtml: theme.extractedHtml,
+      extractedCss: theme.extractedCss,
       sections: [],
       globalStyles: theme.globalStyles,
       createdAt: theme.createdAt,
