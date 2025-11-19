@@ -43,11 +43,17 @@ mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/styleforge')
   .then(() => {
     console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
   })
   .catch((error) => {
     console.error('MongoDB connection error:', error);
-    process.exit(1);
   });
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+// Export for Vercel
+export default app;
