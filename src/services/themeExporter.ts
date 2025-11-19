@@ -1,6 +1,6 @@
 import type { ThemeDocument } from '../models/Theme';
 import type { SectionDocument } from '../models/Section';
-import type { ThemeExportCSS, ThemeExportJSON } from '../../../shared/src/types';
+import type { ThemeExportCSS, ThemeExportJSON } from '../shared-types';
 
 export function exportThemeAsCSS(theme: ThemeDocument, sections: SectionDocument[]): string {
   const { globalStyles } = theme;

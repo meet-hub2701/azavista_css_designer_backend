@@ -1,4 +1,4 @@
-import type { Theme, Section } from '../../../shared/src/types';
+import type { Theme, Section } from '../shared-types';
 
 export function generateCSS(theme: Theme, sections: Section[]): string {
   const { globalStyles } = theme;

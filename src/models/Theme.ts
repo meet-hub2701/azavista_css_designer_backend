@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import type { Theme as ITheme } from '../../../shared/src/types';
+import type { Theme as ITheme } from '../shared-types';
 
 export interface ThemeDocument extends Omit<ITheme, '_id' | 'sections'>, Document {}
 

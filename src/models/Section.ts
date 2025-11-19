@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import type { Section as ISection } from '../../../shared/src/types';
+import type { Section as ISection } from '../shared-types';
 
 export interface SectionDocument extends Omit<ISection, '_id'>, Document {}
 

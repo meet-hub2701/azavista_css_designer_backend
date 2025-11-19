@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
-import { WebsiteAnalysis, ElementMap } from '../../../shared/src/types';
+import { WebsiteAnalysis, ElementMap } from '../shared-types';
 
 export async function analyzeWebsite(url: string): Promise<WebsiteAnalysis> {
   const browser = await puppeteer.launch({ headless: 'new' });

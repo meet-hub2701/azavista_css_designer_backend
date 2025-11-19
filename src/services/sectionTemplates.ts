@@ -1,4 +1,4 @@
-import type { SectionType, SectionCSSProperties } from '../../../shared/src/types';
+import type { SectionType, SectionCSSProperties } from '../shared-types';
 
 export const sectionTemplates: Record<SectionType, SectionCSSProperties> = {
   header: {
