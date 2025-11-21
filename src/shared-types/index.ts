@@ -7,6 +7,8 @@ export interface Theme {
   sourceUrl?: string;
   extractedHtml?: string;
   extractedCss?: string;
+  extractedFonts?: string[];
+  extractedColors?: string[];
   sections: Section[];
   globalStyles: GlobalStyles;
   createdAt?: Date;
@@ -20,6 +22,7 @@ export interface Section {
   type: SectionType;
   cssProperties: SectionCSSProperties;
   customCSS?: string;
+  htmlContent?: string;
   order: number;
   isActive: boolean;
   previewComponent?: string;
@@ -45,6 +48,24 @@ export interface GlobalStyles {
   textColor: string;
 }
 
+export interface TypographyStyle {
+  fontSize: string;
+  fontWeight: string;
+  fontFamily?: string;
+  lineHeight: string;
+  letterSpacing: string;
+  color?: string;
+  textTransform?: string;
+  textDecoration?: string;
+}
+
+export interface BoxModel {
+  top: string;
+  right: string;
+  bottom: string;
+  left: string;
+}
+
 export interface SectionCSSProperties {
   colors: {
     background: string;
@@ -53,17 +74,18 @@ export interface SectionCSSProperties {
     hover: string;
     accent?: string;
   };
-  typography: {
-    fontSize: string;
-    fontWeight: string;
-    fontFamily?: string;
-    lineHeight: string;
-    letterSpacing: string;
+  // Typography can now be a single style (legacy) or a map of tags (h1, h2, p, etc.)
+  typography: TypographyStyle & {
+    tags?: Record<string, TypographyStyle>;
   };
   spacing: {
-    padding: string;
-    margin: string;
+    padding: string; // Legacy/Simple
+    margin: string;  // Legacy/Simple
     gap: string;
+    // Advanced Box Model
+    paddingValues?: BoxModel;
+    marginValues?: BoxModel;
+    pageWidth?: string;
   };
   borders: {
     radius: string;
@@ -109,4 +131,64 @@ export interface ThemeExportJSON {
   sections: Section[];
   exportedAt: Date;
   version: string;
+}
+
+// Section Template System
+export type SectionCategory = 
+  | 'hero' 
+  | 'header' 
+  | 'footer' 
+  | 'cta' 
+  | 'features'
+  | 'testimonials'
+  | 'pricing'
+  | 'contact'
+  | 'content';
+
+export type InjectionMethod = 'prepend' | 'append' | 'replace' | 'before' | 'after';
+
+export interface SectionTemplate {
+  _id?: string;
+  name: string;
+  category: SectionCategory;
+  description?: string;
+  htmlTemplate: string;
+  defaultStyles: string;
+  thumbnail?: string;
+  configurableProps: string[];
+  isPublic: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface InjectionConfig {
+  targetSelector: string;
+  method: InjectionMethod;
+  orderIndex: number;
+  breakpoints?: {
+    mobile?: boolean;
+    tablet?: boolean;
+    desktop?: boolean;
+  };
+}
+
+export interface UserSection {
+  _id?: string;
+  userId?: string;
+  templateId: string;
+  name: string;
+  htmlContent: string;
+  cssContent: string;
+  customizations: Record<string, any>;
+  injectionConfig?: InjectionConfig;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface InjectionPoint {
+  selector: string;
+  label: string;
+  description: string;
+  elementType: string;
+  position: 'top' | 'middle' | 'bottom';
 }

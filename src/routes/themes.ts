@@ -165,13 +165,18 @@ router.post('/from-url', async (req, res) => {
 
     // Import services
     const { extractCompleteWebsite, extractCSSFromWebsite } = await import('../services/websiteProxy.js');
+    const { extractSectionsFromHTML } = await import('../services/websiteAnalyzer.js');
     
-    // Extract HTML and CSS from website (like n8n HTTP node!)
+    // Extract HTML and CSS from website
     console.log('Extracting website:', url);
     const extracted = await extractCompleteWebsite(url);
     console.log('Extraction complete, HTML length:', extracted.html.length);
     
-    // Quick analysis from extracted HTML (no Puppeteer needed!)
+    // Extract individual sections from the HTML with URL fixing
+    const extractedSections = extractSectionsFromHTML(extracted.html, extracted.css, url);
+    console.log('Sections extracted:', extractedSections.length);
+    
+    // Quick analysis from extracted HTML
     const analysis = extractCSSFromWebsite(extracted.html);
     console.log('Analysis complete:', analysis.selectors.length, 'selectors found');
     
@@ -182,60 +187,60 @@ router.post('/from-url', async (req, res) => {
       sourceUrl: url,
       extractedHtml: extracted.html,
       extractedCss: extracted.css,
+      extractedFonts: analysis.fonts,
+      extractedColors: analysis.colors,
       globalStyles: {
         primaryColor: '#007bff',
         secondaryColor: '#6c757d',
-        fontFamily: 'Arial, sans-serif',
+        fontFamily: analysis.globalStyles.fontFamily,
         baseFontSize: '16px',
-        backgroundColor: '#ffffff',
-        textColor: '#212529',
+        backgroundColor: analysis.globalStyles.backgroundColor,
+        textColor: analysis.globalStyles.color,
       },
     });
     
     await theme.save();
     
-    // Create sections based on actual analysis
+    // Create sections from extracted HTML
     const sections = [];
     let order = 0;
     
-    // Find section types from analysis
-    const foundTypes = new Set(analysis.selectors.map(s => s.type));
-    
-    // Create header section if headers found
-    if (foundTypes.has('header') || analysis.selectors.some(s => s.type === 'header')) {
+    // Create sections from extracted individual sections
+    for (const extractedSection of extractedSections) {
       const section = new Section({
         themeId: theme._id,
-        name: `Header from ${new URL(url).hostname}`,
-        type: 'header',
+        name: `${extractedSection.name} from ${new URL(url).hostname}`,
+        type: extractedSection.type,
+        htmlContent: extractedSection.html, // Store the extracted HTML
         cssProperties: {
           colors: {
-            background: '#ffffff',
-            text: '#212529',
+            background: analysis.globalStyles.backgroundColor,
+            text: analysis.globalStyles.color,
             border: '#dee2e6',
             hover: '#007bff',
           },
           typography: {
-            fontSize: '24px',
-            fontWeight: '700',
-            lineHeight: '1.2',
+            fontSize: '16px',
+            fontWeight: '400',
+            lineHeight: '1.5',
             letterSpacing: '0',
           },
           spacing: {
-            padding: '1.5rem',
+            padding: '1rem',
             margin: '0',
             gap: '1rem',
           },
           borders: {
-            radius: '0',
-            width: '0',
-            style: 'none',
+            radius: '0.375rem',
+            width: '1px',
+            style: 'solid',
           },
           effects: {
             shadow: 'none',
             transition: 'all 0.3s ease',
           },
         },
-        customCSS: `/* Selectors found: ${analysis.selectors.filter(s => s.type === 'header').map(s => s.selector).slice(0, 3).join(', ')} */`,
+        customCSS: extractedSection.css,
         isActive: true,
         order: order++,
       });
@@ -243,8 +248,11 @@ router.post('/from-url', async (req, res) => {
       sections.push(section);
     }
     
-    // Create button section if buttons found
-    if (foundTypes.has('button') || analysis.selectors.some(s => s.type === 'button')) {
+    // Also create sections from analysis for other elements
+    const foundTypes = new Set(analysis.selectors.map(s => s.type));
+    
+    // Create button section if buttons found (extracted sections won't have button type)
+    if (foundTypes.has('button')) {
       const section = new Section({
         themeId: theme._id,
         name: `Buttons from ${new URL(url).hostname}`,
@@ -286,7 +294,7 @@ router.post('/from-url', async (req, res) => {
     }
     
     // Create card section if cards found
-    if (foundTypes.has('card') || analysis.selectors.some(s => s.type === 'card')) {
+    if (foundTypes.has('card')) {
       const section = new Section({
         themeId: theme._id,
         name: `Cards from ${new URL(url).hostname}`,
@@ -328,7 +336,7 @@ router.post('/from-url', async (req, res) => {
     }
     
     // Create form section if forms found
-    if (foundTypes.has('form') || analysis.selectors.some(s => s.type === 'form')) {
+    if (foundTypes.has('form')) {
       const section = new Section({
         themeId: theme._id,
         name: `Forms from ${new URL(url).hostname}`,
@@ -370,7 +378,7 @@ router.post('/from-url', async (req, res) => {
     }
     
     // Create navigation section if nav found
-    if (foundTypes.has('navigation') || analysis.selectors.some(s => s.type === 'navigation')) {
+    if (foundTypes.has('navigation')) {
       const section = new Section({
         themeId: theme._id,
         name: `Navigation from ${new URL(url).hostname}`,

@@ -10,6 +10,8 @@ const ThemeSchema = new Schema<ThemeDocument>(
     sourceUrl: { type: String },
     extractedHtml: { type: String },
     extractedCss: { type: String },
+    extractedFonts: [{ type: String }],
+    extractedColors: [{ type: String }],
     globalStyles: {
       primaryColor: { type: String, default: '#007bff' },
       secondaryColor: { type: String, default: '#6c757d' },

@@ -5,9 +5,19 @@ export async function fetchWebsiteHTML(url: string): Promise<string> {
   try {
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'max-age=0',
       },
-      timeout: 10000,
+      timeout: 15000,
     });
     
     return response.data;
@@ -63,6 +73,11 @@ export function extractCSSFromWebsite(html: string): {
   fonts: string[];
   selectors: { selector: string; type: string }[];
   css: string;
+  globalStyles: {
+    backgroundColor: string;
+    color: string;
+    fontFamily: string;
+  };
 } {
   const $ = cheerio.load(html);
   
@@ -107,12 +122,49 @@ export function extractCSSFromWebsite(html: string): {
       extractedCSS += `/* External CSS: ${href} */\n`;
     }
   });
+
+  // Extract fonts from CSS content
+  const fontMatches = extractedCSS.match(/font-family:\s*([^;]+)/g);
+  if (fontMatches) {
+    fontMatches.forEach(match => {
+      // Clean up the font family string
+      const font = match.replace(/font-family:\s*/, '').trim();
+      // Split by comma to get individual fonts if multiple are defined
+      const individualFonts = font.split(',').map(f => f.trim().replace(/['"]/g, ''));
+      individualFonts.forEach(f => {
+        if (f && !['inherit', 'initial', 'unset'].includes(f.toLowerCase())) {
+          fonts.add(f);
+        }
+      });
+    });
+  }
   
+  // Extract global styles (simple heuristic)
+  let globalStyles = {
+    backgroundColor: '#ffffff',
+    color: '#212529',
+    fontFamily: 'inherit'
+  };
+
+  // Try to find body styles in extracted CSS
+  const bodyMatch = extractedCSS.match(/body\s*{([^}]+)}/);
+  if (bodyMatch) {
+    const bodyStyles = bodyMatch[1];
+    const bgMatch = bodyStyles.match(/background-color:\s*([^;]+)/);
+    const colorMatch = bodyStyles.match(/color:\s*([^;]+)/);
+    const fontMatch = bodyStyles.match(/font-family:\s*([^;]+)/);
+    
+    if (bgMatch) globalStyles.backgroundColor = bgMatch[1].trim();
+    if (colorMatch) globalStyles.color = colorMatch[1].trim();
+    if (fontMatch) globalStyles.fontFamily = fontMatch[1].trim();
+  }
+
   return {
     colors: Array.from(colors).slice(0, 10),
     fonts: Array.from(fonts),
     selectors,
     css: extractedCSS,
+    globalStyles
   };
 }
 

@@ -26,11 +26,28 @@ const SectionSchema = new Schema<SectionDocument>(
         fontFamily: String,
         lineHeight: String,
         letterSpacing: String,
+        color: String,
+        textTransform: String,
+        textDecoration: String,
+        tags: { type: Map, of: Object }, // Stores Record<string, TypographyStyle>
       },
       spacing: {
         padding: String,
         margin: String,
         gap: String,
+        paddingValues: {
+          top: String,
+          right: String,
+          bottom: String,
+          left: String,
+        },
+        marginValues: {
+          top: String,
+          right: String,
+          bottom: String,
+          left: String,
+        },
+        pageWidth: String,
       },
       borders: {
         radius: String,
@@ -46,6 +63,7 @@ const SectionSchema = new Schema<SectionDocument>(
       },
     },
     customCSS: { type: String, default: '' },
+    htmlContent: { type: String, default: '' },
     order: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     previewComponent: { type: String },
