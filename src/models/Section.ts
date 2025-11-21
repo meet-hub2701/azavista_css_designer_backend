@@ -10,7 +10,7 @@ const SectionSchema = new Schema<SectionDocument>(
     type: {
       type: String,
       required: true,
-      enum: ['header', 'footer', 'card', 'button', 'form', 'navigation', 'hero', 'content', 'custom'],
+      enum: ['header', 'footer', 'card', 'button', 'form', 'navigation', 'hero', 'content', 'custom', 'cta', 'testimonials', 'pricing', 'contact', 'features'],
     },
     cssProperties: {
       colors: {

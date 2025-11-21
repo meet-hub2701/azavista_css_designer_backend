@@ -214,16 +214,16 @@ router.post('/from-url', async (req, res) => {
         htmlContent: extractedSection.html, // Store the extracted HTML
         cssProperties: {
           colors: {
-            background: analysis.globalStyles.backgroundColor,
-            text: analysis.globalStyles.color,
-            border: '#dee2e6',
-            hover: '#007bff',
+            background: 'transparent',
+            text: 'inherit',
+            border: 'transparent',
+            hover: 'inherit',
           },
           typography: {
-            fontSize: '16px',
-            fontWeight: '400',
-            lineHeight: '1.5',
-            letterSpacing: '0',
+            fontSize: 'inherit',
+            fontWeight: 'inherit',
+            lineHeight: 'inherit',
+            letterSpacing: 'inherit',
           },
           spacing: {
             padding: '1rem',
