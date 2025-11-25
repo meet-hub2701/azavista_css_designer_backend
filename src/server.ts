@@ -38,15 +38,19 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// MongoDB connection
-mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/styleforge')
-  .then(() => {
-    console.log('Connected to MongoDB');
-  })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error);
-  });
+// MongoDB connection middleware
+import connectDB from './db.js';
+
+// Ensure DB is connected for every request (Serverless optimization)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
 
 // For local development
 if (process.env.NODE_ENV !== 'production') {
