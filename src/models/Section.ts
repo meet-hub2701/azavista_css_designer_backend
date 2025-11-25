@@ -110,7 +110,7 @@ const SectionSchema = new Schema<SectionDocument>(
     isActive: { type: Boolean, default: true },
     previewComponent: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true, bufferCommands: false }
 );
 
 // Index for efficient queries
