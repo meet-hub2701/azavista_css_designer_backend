@@ -8,8 +8,12 @@ router.get('/theme/:themeId', async (req, res) => {
   try {
     const sections = await Section.find({ themeId: req.params.themeId }).sort({ order: 1 });
     res.json(sections);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+  } catch (error: any) {
+    console.error('Error fetching sections:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid Theme ID format' });
+    }
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -21,8 +25,12 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Section not found' });
     }
     res.json(section);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+  } catch (error: any) {
+    console.error('Error fetching section:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid Section ID format' });
+    }
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

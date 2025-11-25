@@ -25,8 +25,12 @@ router.get('/:id', async (req, res) => {
     
     const sections = await Section.find({ themeId: req.params.id }).sort({ order: 1 });
     res.json({ ...theme.toObject(), sections });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+  } catch (error: any) {
+    console.error('Error fetching theme:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid Theme ID format' });
+    }
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
