@@ -19,7 +19,12 @@ if (!cached) {
 
 async function connectDB() {
   if (cached.conn) {
-    return cached.conn;
+    // Check if connection is actually ready
+    if (mongoose.connection.readyState === 1) {
+      return cached.conn;
+    }
+    console.log('Cached connection is not ready, reconnecting...');
+    cached.promise = null;
   }
 
   if (!cached.promise) {
