@@ -60,6 +60,48 @@ const SectionSchema = new Schema<SectionDocument>(
         transition: String,
         transform: String,
         opacity: String,
+        animation: {
+          name: String,
+          duration: String,
+          delay: String,
+          timingFunction: String,
+        },
+      },
+      buttons: {
+        primary: {
+          type: { type: String, enum: ['contained', 'outlined', 'text'] },
+          borderRadius: String,
+          borderWidth: String,
+          borderColor: String,
+          backgroundColor: String,
+          typography: {
+            fontSize: String,
+            fontWeight: String,
+            fontFamily: String,
+            lineHeight: String,
+            letterSpacing: String,
+            color: String,
+            textTransform: String,
+            textDecoration: String,
+          }
+        },
+        secondary: {
+          type: { type: String, enum: ['contained', 'outlined', 'text'] },
+          borderRadius: String,
+          borderWidth: String,
+          borderColor: String,
+          backgroundColor: String,
+          typography: {
+            fontSize: String,
+            fontWeight: String,
+            fontFamily: String,
+            lineHeight: String,
+            letterSpacing: String,
+            color: String,
+            textTransform: String,
+            textDecoration: String,
+          }
+        }
       },
     },
     customCSS: { type: String, default: '' },

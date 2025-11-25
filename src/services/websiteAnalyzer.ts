@@ -118,45 +118,78 @@ function extractRelevantCSS(fullCSS: string, element: cheerio.Cheerio<any>, $: c
   const mainSelector = generateSelector(element);
   if (!mainSelector) return '';
 
-  // This is still a heuristic. A full CSS parser would be better but heavier.
-  // We'll look for blocks that start with the selector or contain it.
-  
-  const lines = fullCSS.split('\n');
   const relevantCSS: string[] = [];
-  let inRelevantBlock = false;
-  let braceCount = 0;
+  
+  // 1. Always include :root variables and @font-face
+  const rootMatches = fullCSS.match(/:root\s*{[^}]*}/g);
+  if (rootMatches) relevantCSS.push(...rootMatches);
+  
+  const fontFaceMatches = fullCSS.match(/@font-face\s*{[^}]*}/g);
+  if (fontFaceMatches) relevantCSS.push(...fontFaceMatches);
 
-  // Collect child classes/ids to broaden search
-  const childSelectors = new Set<string>();
+  // 2. Collect child classes/ids to broaden search
+  const selectorsToFind = new Set<string>([mainSelector]);
   element.find('*').each((_, el) => {
     const sel = generateSelector($(el));
-    if (sel) childSelectors.add(sel);
+    if (sel) selectorsToFind.add(sel);
   });
 
-  for (const line of lines) {
-    const trimmed = line.trim();
+  // Escape special regex characters
+  const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  // 3. Find direct matches and matches inside media queries
+  const cssBlocks = fullCSS.split('}'); // Simple split, not perfect but fast
+  
+  Array.from(selectorsToFind).forEach(selector => {
+    if (!selector) return;
+    const escapedSelector = escapeRegExp(selector);
     
-    // Check if line starts a block relevant to us
-    if (!inRelevantBlock) {
-      if (trimmed.includes(mainSelector) || 
-          Array.from(childSelectors).some(s => trimmed.includes(s))) {
-        inRelevantBlock = true;
+    // Regex for direct selector: selector { ...
+    // And selector with pseudo-classes: selector:hover { ...
+    const selectorRegex = new RegExp(`${escapedSelector}([:\\s][^{]*)?{`, 'i');
+
+    // Scan through blocks to find matches (including media queries)
+    // This is a naive parser but better than strict regex for nested blocks
+    // For a robust solution, we'd need a real CSS parser, but this is a quick improvement
+    
+    // Revert to regex for simple blocks for now to avoid complexity, but add media query support
+    try {
+      // Match direct blocks
+      const directRegex = new RegExp(`${escapedSelector}([:\\s][^{]*)?\\s*{[^}]*}`, 'gi');
+      const directMatches = fullCSS.match(directRegex);
+      if (directMatches) relevantCSS.push(...directMatches);
+
+      // Match inside media queries (simple heuristic)
+      // @media ... { ... selector ... { ... } }
+      // This is hard with regex. Instead, let's just grab ALL media queries for now if they seem relevant?
+      // No, that's too much.
+      
+      // Let's try to capture the block if it's inside a media query
+      // We'll look for: @media [^{]+ { [^}]+ selector [^}]+ {
+      // This is getting complicated.
+      
+      // Alternative: Just include ALL media queries? 
+      // User said "looking so much bad". Missing media queries is a huge cause.
+      // Let's include all @media blocks that contain any of our selectors.
+      
+      const mediaRegex = /@media[^{]+\{([\s\S]+?)\}\s*\}/g;
+      let match;
+      while ((match = mediaRegex.exec(fullCSS)) !== null) {
+        if (match[1].includes(selector)) {
+           relevantCSS.push(match[0]);
+        }
       }
+    } catch (e) {
+      // Ignore regex errors
     }
+  });
 
-    if (inRelevantBlock) {
-      relevantCSS.push(line);
-      braceCount += (line.match(/{/g) || []).length;
-      braceCount -= (line.match(/}/g) || []).length;
+  // Deduplicate
+  const uniqueCSS = Array.from(new Set(relevantCSS));
 
-      if (braceCount <= 0 && line.includes('}')) {
-        inRelevantBlock = false;
-        braceCount = 0;
-      }
-    }
-  }
-
-  return relevantCSS.join('\n');
+  // Limit the output size
+  const result = uniqueCSS.join('\n');
+  return result.length > 100000 ? result.substring(0, 100000) + '\n/* Truncated... */' : result;
 }
 
 export async function analyzeWebsite(url: string): Promise<WebsiteAnalysis> {

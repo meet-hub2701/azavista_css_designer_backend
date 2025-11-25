@@ -66,6 +66,15 @@ export interface BoxModel {
   left: string;
 }
 
+export interface ButtonStyle {
+  type: 'contained' | 'outlined' | 'text';
+  borderRadius: string;
+  borderWidth: string;
+  borderColor: string;
+  backgroundColor: string;
+  typography: TypographyStyle;
+}
+
 export interface SectionCSSProperties {
   colors: {
     background: string;
@@ -98,6 +107,16 @@ export interface SectionCSSProperties {
     transition: string;
     transform?: string;
     opacity?: string;
+    animation?: {
+      name: string;
+      duration: string;
+      delay?: string;
+      timingFunction?: string;
+    };
+  };
+  buttons?: {
+    primary: ButtonStyle;
+    secondary: ButtonStyle;
   };
 }
 

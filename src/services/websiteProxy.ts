@@ -1,28 +1,83 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+import puppeteer from 'puppeteer';
+
 export async function fetchWebsiteHTML(url: string): Promise<string> {
+  const commonHeaders = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Cache-Control': 'max-age=0',
+  };
+
+  const chromeHeaders = {
+    ...commonHeaders,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"Windows"',
+  };
+
+  const firefoxHeaders = {
+    ...commonHeaders,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+  };
+
   try {
+    // Attempt 1: Chrome headers
     const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Cache-Control': 'max-age=0',
-      },
+      headers: chromeHeaders,
       timeout: 15000,
+      maxRedirects: 5,
     });
-    
     return response.data;
-  } catch (error) {
-    throw new Error(`Failed to fetch website: ${error}`);
+  } catch (error: any) {
+    console.log(`First attempt failed for ${url}: ${error.message}. Retrying with fallback headers...`);
+    
+    try {
+      // Attempt 2: Firefox headers (Fallback)
+      const response = await axios.get(url, {
+        headers: firefoxHeaders,
+        timeout: 15000,
+        maxRedirects: 5,
+      });
+      return response.data;
+    } catch (retryError: any) {
+      console.log(`Second attempt failed for ${url}: ${retryError.message}. Retrying with Puppeteer...`);
+      
+      try {
+        // Attempt 3: Puppeteer (Ultimate Fallback)
+        return await fetchWithPuppeteer(url);
+      } catch (puppeteerError: any) {
+        throw new Error(`Failed to fetch website after retries: ${puppeteerError.message}`);
+      }
+    }
+  }
+}
+
+async function fetchWithPuppeteer(url: string): Promise<string> {
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  
+  try {
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+    await page.setViewport({ width: 1920, height: 1080 });
+    
+    // Navigate and wait for network idle to ensure dynamic content loads
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    
+    const content = await page.content();
+    return content;
+  } finally {
+    await browser.close();
   }
 }
 
@@ -77,6 +132,8 @@ export function extractCSSFromWebsite(html: string): {
     backgroundColor: string;
     color: string;
     fontFamily: string;
+    primaryColor: string;
+    secondaryColor: string;
   };
 } {
   const $ = cheerio.load(html);
@@ -143,7 +200,9 @@ export function extractCSSFromWebsite(html: string): {
   let globalStyles = {
     backgroundColor: '#ffffff',
     color: '#212529',
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    primaryColor: '#007bff',
+    secondaryColor: '#6c757d',
   };
 
   // Try to find body styles in extracted CSS
@@ -196,10 +255,34 @@ export async function extractCompleteWebsite(url: string): Promise<{
       }
     });
     
-    // Extract CSS
+    // Extract CSS (both inline and external)
     let css = '';
+    
+    // Fetch external stylesheets
+    const links = $('link[rel="stylesheet"]').toArray();
+    for (const link of links) {
+      const href = $(link).attr('href');
+      if (href) {
+        try {
+          console.log(`Fetching external CSS: ${href}`);
+          let cssContent = await fetchWebsiteHTML(href);
+          // Fix relative URLs in the CSS (images, fonts) relative to the CSS file location
+          cssContent = fixCSSUrls(cssContent, href);
+          
+          css += `/* External CSS: ${href} */\n${cssContent}\n`;
+          // Remove the link tag since we've inlined it
+          $(link).remove();
+        } catch (e: any) {
+          console.warn(`Failed to fetch CSS ${href}: ${e.message}`);
+          // Keep the link tag if we failed to fetch it, so the browser might still try
+        }
+      }
+    }
+
+    // Extract inline styles
     $('style').each((_, elem) => {
       css += $(elem).html() + '\n';
+      $(elem).remove(); // Remove inline styles as they are now in our global css string
     });
     
     return {
@@ -210,4 +293,20 @@ export async function extractCompleteWebsite(url: string): Promise<{
   } catch (error) {
     throw new Error(`Failed to extract website: ${error}`);
   }
+}
+
+// Helper to fix relative URLs in CSS
+function fixCSSUrls(css: string, cssUrl: string): string {
+  return css.replace(/url\((['"]?)([^)'"]+)\1\)/g, (match, quote, url) => {
+    if (!url || url.trim().startsWith('data:') || url.trim().startsWith('http') || url.trim().startsWith('//')) {
+      return match;
+    }
+    try {
+      // Resolve relative URL against the CSS file's URL
+      const absoluteUrl = new URL(url.trim(), cssUrl).href;
+      return `url(${quote || ''}${absoluteUrl}${quote || ''})`;
+    } catch (e) {
+      return match;
+    }
+  });
 }

@@ -214,8 +214,8 @@ router.post('/from-url', async (req, res) => {
         htmlContent: extractedSection.html, // Store the extracted HTML
         cssProperties: {
           colors: {
-            background: 'transparent',
-            text: 'inherit',
+            background: '',
+            text: '',
             border: 'transparent',
             hover: 'inherit',
           },
@@ -226,9 +226,9 @@ router.post('/from-url', async (req, res) => {
             letterSpacing: 'inherit',
           },
           spacing: {
-            padding: '1rem',
-            margin: '0',
-            gap: '1rem',
+            padding: '',
+            margin: '',
+            gap: '',
           },
           borders: {
             radius: '0.375rem',
@@ -238,6 +238,42 @@ router.post('/from-url', async (req, res) => {
           effects: {
             shadow: 'none',
             transition: 'all 0.3s ease',
+            animation: {
+              name: 'none',
+              duration: '1s',
+              delay: '0s',
+              timingFunction: 'ease',
+            },
+          },
+          buttons: {
+            primary: {
+              type: 'contained',
+              borderRadius: '4px',
+              borderWidth: '1px',
+              borderColor: 'transparent',
+              backgroundColor: analysis.globalStyles.primaryColor,
+              typography: {
+                fontSize: '16px',
+                fontWeight: '500',
+                lineHeight: '1.5',
+                letterSpacing: 'normal',
+                color: '#ffffff',
+              }
+            },
+            secondary: {
+              type: 'outlined',
+              borderRadius: '4px',
+              borderWidth: '1px',
+              borderColor: analysis.globalStyles.secondaryColor,
+              backgroundColor: 'transparent',
+              typography: {
+                fontSize: '16px',
+                fontWeight: '500',
+                lineHeight: '1.5',
+                letterSpacing: 'normal',
+                color: analysis.globalStyles.secondaryColor,
+              }
+            }
           },
         },
         customCSS: extractedSection.css,
@@ -376,7 +412,7 @@ router.post('/from-url', async (req, res) => {
       await section.save();
       sections.push(section);
     }
-    
+
     // Create navigation section if nav found
     if (foundTypes.has('navigation')) {
       const section = new Section({
