@@ -21,7 +21,7 @@ const ThemeSchema = new Schema<ThemeDocument>(
       textColor: { type: String, default: '#212529' },
     },
   },
-  { timestamps: true, bufferCommands: false }
+  { timestamps: true }
 );
 
 export default mongoose.model<ThemeDocument>('Theme', ThemeSchema);

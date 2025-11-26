@@ -6,9 +6,6 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
-// Disable buffering globally to prevent timeouts in serverless environment
-mongoose.set('bufferCommands', false);
-
 /**
  * Global is used here to maintain a cached connection across hot reloads
  * in development. This prevents connections growing exponentially
@@ -32,7 +29,6 @@ async function connectDB() {
 
   if (!cached.promise) {
     const opts = {
-      bufferCommands: false, // Disable mongoose buffering
       serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
       socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
     };

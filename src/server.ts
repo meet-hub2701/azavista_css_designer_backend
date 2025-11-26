@@ -54,8 +54,13 @@ app.use(async (req, res, next) => {
 
 // For local development
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  app.listen(PORT as number, '0.0.0.0', async () => {
+    try {
+      await connectDB();
+      console.log(`Server running on port ${PORT}`);
+    } catch (error) {
+      console.error('Failed to connect to DB on startup:', error);
+    }
   });
 }
 
