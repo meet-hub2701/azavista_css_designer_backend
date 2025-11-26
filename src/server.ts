@@ -28,16 +28,6 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.text({ limit: '10mb' }));
 
-// Routes
-app.use('/api/themes', themeRoutes);
-app.use('/api/sections', sectionsRoutes);
-app.use('/api/analysis', analysisRoutes);
-app.use('/api/proxy', proxyRoutes);
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // MongoDB connection middleware
 import connectDB from './db.js';
 
@@ -50,6 +40,16 @@ app.use(async (req, res, next) => {
     console.error('Database connection failed:', error);
     res.status(500).json({ error: 'Database connection failed' });
   }
+});
+
+// Routes
+app.use('/api/themes', themeRoutes);
+app.use('/api/sections', sectionsRoutes);
+app.use('/api/analysis', analysisRoutes);
+app.use('/api/proxy', proxyRoutes);
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // For local development
