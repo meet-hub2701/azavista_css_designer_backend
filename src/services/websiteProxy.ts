@@ -198,7 +198,7 @@ export function extractCSSFromWebsite(html: string): {
   
   // Extract global styles (simple heuristic)
   let globalStyles = {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
     color: '#212529',
     fontFamily: 'inherit',
     primaryColor: '#007bff',
